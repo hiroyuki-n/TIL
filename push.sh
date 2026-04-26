@@ -1,7 +1,11 @@
 #!/usr/bin/env sh
-# TIL: 変更をまとめてコミットして origin にプッシュする
-# 使い方: ./push.sh "コミットメッセージ"
-# 例:     ./push.sh "TIL: Git のメモを追加"
+# TIL: 作業ツリー全体 (git add -A) をコミットし origin にプッシュする
+#
+# 使い方:
+#   ./push.sh "コミットメッセージ"  … 明示
+#   ./push.sh                       … 日時の自動コミットメッセージ
+# ターミナルに本ファイルのパスをドロップして Enter  … 上と同じ（引数なし）
+# macOS では TIL-Sync.command のダブルクリックも可。
 #
 # 補足: ホーム等の global gitignore に *.md があると、
 # 通常の git add では .md が取り込めません。本スクリプトでは .md を
@@ -9,10 +13,12 @@
 
 set -eu
 
-if [ -z "${1-}" ]; then
-  echo "使い方: $0 <コミットメッセージ>" >&2
-  echo "例:     $0 \"TIL: 学びのメモを追加\"" >&2
-  exit 1
+if [ -n "${1-}" ]; then
+  msg="$*"
+else
+  msg="TIL: sync $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST')"
+  echo "（コミットメッセージ未指定のため次を使います） $msg" >&2
+  echo "  付けたい場合: $0 \"TIL: 内容の要約\"" >&2
 fi
 
 # 常に push.sh があるディレクトリをルートにする
@@ -28,7 +34,6 @@ git add -A
 # グローバルな gitignore 等で *.md が除外されていても、リポ内の .md を追跡
 find . -not -path '*/.git/*' -name "*.md" -type f -exec git add -f -- {} + 2>/dev/null || true
 
-msg="$*"
 echo "---- 次をコミットするファイル (staged) ----" >&2
 git diff --cached --name-only || true
 if git diff --cached --quiet; then
